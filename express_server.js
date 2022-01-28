@@ -19,7 +19,7 @@ const generateRandomString = () => {
 const emailchecker = function(email) {
   for (const user in users) {
     if (users[user].email === email) {
-      return users[user].id
+      return users[user].id;
     }
   } return false;
 };
@@ -29,18 +29,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 
 //shows Hello at local:port/
@@ -63,10 +63,10 @@ app.get("/hello", (req, res) => {
 
 //renders url_index.ejs to /urls
 app.get("/urls", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     user: users[req.cookies.user_id],
-   };
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -124,40 +124,60 @@ app.post("/urls/:id", (req,res) => {
 
 //set a cookie for user when logged in.
 app.post("/login", (req,res) => {
-  let username = req.body.username;
-  res.cookie('username',username);
-  res.redirect("/urls");
+  let email = req.body.email;
+  let password = req.body.password;
+
+  if (!emailchecker(email)) {
+    res.status(403).send("This email does not exist, please register!");
+  } else {
+    const id = emailchecker(email);
+    if (users[id].password !== password) {
+      res.status(403).send("Wrong password, please try again");
+    } else {
+      res.cookie('user_id', id);
+      res.redirect("/urls");
+    }
+  }
 });
 
+//login page
+app.get ('/login', (req,res) => {
+  let templateVars = {
+    user: users[req.cookies["user_id"]],
+  };
+  res.render("urls_login", templateVars);
+});
+
+
 app.post("/logout", (req,res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 
-app.get ("/register", (req,res) => {
+app.get("/register", (req,res) => {
   let templateVars = {
     user: users[req.cookies.user_id]
   };
-  res.render("urls_register", templateVars)
-})
+  res.render("urls_register", templateVars);
+});
 
-app.post ('/register', (req,res) => {
+app.post('/register', (req,res) => {
   let email = req.body.email;
   let password = req.body.password;
   if (!email || !password) {
-    res.send(400, "Please enter a valid email and password");
+    res.status(400).send("Please enter a valid email and password");
     // console.log(users)
   } else if (emailchecker(email)) {
-    res.send(400, "OOPS! This email is not avaliable");
+    res.status(400).send( "OOPS! This email is not avaliable");
     // console.log(users)
   } else {
-  let id = generateRandomString();
-  users[id] = {
-    id,
-    email,
-    password,
-  };
-  res.cookie('user_id', id);
-  res.redirect("/urls");
-}
-})
+    let id = generateRandomString();
+    users[id] = {
+      id,
+      email,
+      password,
+    };
+    res.cookie('user_id', id);
+    res.redirect("/urls");
+  }
+});
