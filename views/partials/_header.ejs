@@ -1,5 +1,5 @@
 <header>
-  <nav class="navbar navbar-expand-md navbar-dark bg-success">
+  <nav class="navbar navbar-expand-md navbar-light" style= 'background-color: rgba(219, 149, 18, 0.329);'>
     <a class="navbar-brand" href="/urls">TinyApp</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -11,10 +11,10 @@
       </div>
     </div>
     
-    <% if (username) { %>
+    <% if (user) { %>
     <form method="POST" action="/logout" class="form-inline">
     <div class="form-group form-inline">
-        <label>Welcome, <%= username   %></label>
+        <label>Welcome, <%= user.email   %></label>
         <button type="submit" style="background-color:white; border-color:black; color:black;margin-left: 6px;" class="btn btn-primary" ;="" margin-left:="" '6px'="">Logout</button>
     </div>
     </form>

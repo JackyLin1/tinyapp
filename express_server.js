@@ -9,15 +9,39 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
+//helper function for generating random id
 const generateRandomString = () => {
   let num = Math.random().toString(36).slice(7);
   return num.length === 6 ? num : generateRandomString();
+};
+
+//helper function for email lookup
+const emailchecker = function(email) {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return users[user].id
+    }
+  } return false;
 };
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 
 //shows Hello at local:port/
 app.get("/", (req, res) => {
@@ -41,7 +65,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies.username,
+    user: users[req.cookies.user_id],
    };
   res.render("urls_index", templateVars);
 });
@@ -49,7 +73,7 @@ app.get("/urls", (req, res) => {
 //renders urls_new.ejs to /urls/new
 app.get("/urls/new", (req, res) => {
   let templateVars = {
-    username : req.cookies.username,
+    user: users[req.cookies.user_id],
   };
   res.render("urls_new", templateVars);
 });
@@ -60,7 +84,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies.username,
+    user: users[req.cookies.user_id],
   };
   res.render("urls_show", templateVars);
 });
@@ -109,3 +133,31 @@ app.post("/logout", (req,res) => {
   res.clearCookie('username');
   res.redirect('/urls');
 });
+
+app.get ("/register", (req,res) => {
+  let templateVars = {
+    user: users[req.cookies.user_id]
+  };
+  res.render("urls_register", templateVars)
+})
+
+app.post ('/register', (req,res) => {
+  let email = req.body.email;
+  let password = req.body.password;
+  if (!email || !password) {
+    res.send(400, "Please enter a valid email and password");
+    // console.log(users)
+  } else if (emailchecker(email)) {
+    res.send(400, "OOPS! This email is not avaliable");
+    // console.log(users)
+  } else {
+  let id = generateRandomString();
+  users[id] = {
+    id,
+    email,
+    password,
+  };
+  res.cookie('user_id', id);
+  res.redirect("/urls");
+}
+})
