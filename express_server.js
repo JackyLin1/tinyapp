@@ -3,6 +3,10 @@ let cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const app = express();
 const PORT = 8080; // default port 8080
+const bcrypt = require('bcryptjs');
+
+// const password = "purple-monkey-dinosaur"; // found in the req.params object
+// const hashedPassword = bcrypt.hashSync(password, 10);
 
 //middlewares
 app.set("view engine", "ejs");
@@ -35,35 +39,47 @@ const userUrls = (id) => {
   return personalUrl;
 }
 
+const cookieHasUser = function (cookie, userDatabase) {
+  for (const user in userDatabase) {
+    if (cookie === user) {
+      return true;
+    }
+  } return false;
+}
+
 const urlDatabase = {
-  b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "userRandomID"
-  },
-  i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "userRandomID"
-  }
+  // b6UTxQ: {
+  //     longURL: "https://www.tsn.ca",
+  //     userID: "userRandomID"
+  // },
+  // i3BoGr: {
+  //     longURL: "https://www.google.ca",
+  //     userID: "userRandomID"
+  // }
 };
 
 
 const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
+  // "userRandomID": {
+  //   id: "userRandomID",
+  //   email: "user@example.com",
+  //   password: "purple-monkey-dinosaur"
+  // },
+  // "user2RandomID": {
+  //   id: "user2RandomID",
+  //   email: "user2@example.com",
+  //   password: "dishwasher-funk"
+  // }
 };
 
 
 //shows Hello at local:port/
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.user_id) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
 });
 
 //logs which port is listening upon connection.
@@ -90,12 +106,13 @@ app.get("/urls", (req, res) => {
 
 //renders urls_new.ejs to /urls/new
 app.get("/urls/new", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies.user_id],
-  };
+  
   if (!req.cookies.user_id) {
     res.redirect("/login");
   } else {
+  let templateVars = {
+    user: users[req.cookies.user_id],
+  };
   res.render("urls_new", templateVars);
   }
 });
@@ -126,9 +143,13 @@ app.get("/u/:shortURL", (req,res) => {
 //Random generate shortURL as JSON, and add it into urlDataBase
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
-  console.log(req.body);  // Log the POST request body to the console, for checking
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID : req.cookies.user_id,
+  };
+console.log(urlDatabase);
+  res.redirect(`/urls`);
+ 
 });
 
 //deletes URL and redirect back to /urls
@@ -165,11 +186,11 @@ app.post("/login", (req,res) => {
   if (!emailchecker(email)) {
     res.status(403).send("This email does not exist, please register!");
   } else {
-    const id = emailchecker(email);
-    if (users[id].password !== password) {
+    const newID = emailchecker(email);
+    if (!bcrypt.compareSync(password, users[newID].password)) {
       res.status(403).send("Wrong password, please try again");
     } else {
-      res.cookie('user_id', id);
+      res.cookie('user_id', newID);
       res.redirect("/urls");
     }
   }
@@ -210,7 +231,7 @@ app.post('/register', (req,res) => {
     users[id] = {
       id,
       email,
-      password,
+      password : bcrypt.hashSync(password, 10),
     };
     res.cookie('user_id', id);
     res.redirect("/urls");
