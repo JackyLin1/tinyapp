@@ -5,9 +5,6 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bcrypt = require('bcryptjs');
 
-// const password = "purple-monkey-dinosaur"; // found in the req.params object
-// const hashedPassword = bcrypt.hashSync(password, 10);
-
 //middlewares
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -44,6 +41,7 @@ const userUrls = (id) => {
   return personalUrl;
 }
 
+//check if user exist in cookie
 const cookieHasUser = function (cookie, userDatabase) {
   for (const user in userDatabase) {
     if (cookie === user) {
@@ -52,6 +50,7 @@ const cookieHasUser = function (cookie, userDatabase) {
   } return false;
 }
 
+//collector variable for urls, and users
 const urlDatabase = {};
 const users = {};
 
@@ -192,11 +191,13 @@ app.post("/login", (req,res) => {
   }
 });
 
+//clear cookie upon clicking logout
 app.post("/logout", (req,res) => {
   req.session = null;
   res.redirect('/urls');
 });
 
+//website for registering
 app.get("/register", (req,res) => {
   if (cookieHasUser(req.session.user_id, users)) {
     res.redirect('/urls');
@@ -208,6 +209,7 @@ app.get("/register", (req,res) => {
 }
 });
 
+//creating an account, check if email exist, check if missing email or password
 app.post('/register', (req,res) => {
   let email = req.body.email;
   let password = req.body.password;
