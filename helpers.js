@@ -1,3 +1,14 @@
+//specific users' url
+const userUrls = (id, database) => {
+  let personalUrl = {};
+  for (let urlKey in database) {
+    if (database[urlKey].userID === id) {
+      personalUrl[urlKey] = database[urlKey];
+    }
+  }
+  return personalUrl;
+};
+
 //helper function for generating random id
 const generateRandomString = () => {
   let num = Math.random().toString(36).slice(7);
@@ -8,20 +19,9 @@ const generateRandomString = () => {
 const emailChecker = (email, database) => {
   for (const user in database) {
     if (database[user].email === email) {
-      return users[user].id;
+      return database[user].id;
     }
   } return false;
-};
-
-//specific users' url
-const userUrls = (id) => {
-  let personalUrl = {};
-  for (let urlKey in urlDatabase) {
-    if (urlDatabase[urlKey].userID === id) {
-      personalUrl[urlKey] = urlDatabase[urlKey];
-    }
-  }
-  return personalUrl;
 };
 
 //check if user exist in cookie

@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 const bcrypt = require('bcryptjs');
-
+const {generateRandomString, emailChecker, cookieHasUser, userUrls} = require ('./helpers');
 
 //middlewares
 app.set("view engine", "ejs");
@@ -15,41 +15,6 @@ app.use(cookieSession({
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
-
-//helper function for generating random id
-const generateRandomString = () => {
-  let num = Math.random().toString(36).slice(7);
-  return num.length === 6 ? num : generateRandomString();
-};
-
-//helper function for email lookup
-const emailChecker = (email, database) => {
-  for (const user in database) {
-    if (database[user].email === email) {
-      return database[user].id;
-    }
-  } return false;
-};
-
-//specific users' url
-const userUrls = (id) => {
-  let personalUrl = {};
-  for (let urlKey in urlDatabase) {
-    if (urlDatabase[urlKey].userID === id) {
-      personalUrl[urlKey] = urlDatabase[urlKey];
-    }
-  }
-  return personalUrl;
-};
-
-//check if user exist in cookie
-const cookieHasUser = function(cookie, userDatabase) {
-  for (const user in userDatabase) {
-    if (cookie === user) {
-      return true;
-    }
-  } return false;
-};
 
 //collector variable for urls, and users
 const urlDatabase = {};
@@ -71,8 +36,9 @@ app.get("/", (req, res) => {
 
 //renders url_index.ejs to /urls
 app.get("/urls", (req, res) => {
+  const urls = userUrls(req.session.user_id, urlDatabase);
   const templateVars = {
-    urls: userUrls(req.session.user_id),
+    urls,
     user: users[req.session.user_id],
   };
   res.render("urls_index", templateVars);
@@ -139,7 +105,7 @@ app.get("/u/:shortURL", (req,res) => {
 //deletes URL and redirect back to /urls
 app.post("/urls/:shortURL/delete", (req, res) => {
   const id = req.session.user_id;
-  const url = userUrls(id);
+  const url = userUrls(id, urlDatabase);
   if (Object.keys(url).includes(req.params.shortURL)) {
     const shortURL = req.params.shortURL;
     delete urlDatabase[shortURL];
@@ -152,7 +118,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //changes longURL and redirect back to /urls
 app.post("/urls/:id", (req,res) => {
   let id = req.session.user_id;
-  let urls = userUrls(id);
+  let urls = userUrls(id, urlDatabase);
   if (Object.keys(urls).includes(req.params.id)) {
     let shortURL = req.params.id;
     urlDatabase[shortURL].longURL = req.body.newURL;
